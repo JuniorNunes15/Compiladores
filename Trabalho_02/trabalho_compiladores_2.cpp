@@ -158,9 +158,7 @@ void gen(Bloco* bloco, int N, longevidade* log) {
     for(int i = 0; i < N; i++) {
         for(int j = 0; j < bloco[i].codigo.size(); j++) {
             if(bloco[i].codigo[j].find('=') != std::string::npos) {
-                //log[i].def += "d";
                 log[i].def += to_string(x);
-                //log[i].def += ",";
                 x++;
             }
         }
@@ -177,9 +175,7 @@ void kill(Bloco* bloco, int N, int x, int b, char a, longevidade* log) {
             if(aux[0] == a) {
                 if(x == i && b == j) {}
                 else {
-                    //log[x].use += "d";
                     log[x].use += log[i].def[d];
-                    //log[x].use += ",";
                 }
             }
             d += 1;
@@ -204,7 +200,6 @@ void Reaching_in(Bloco* bloco, int N, int x, longevidade* log) {
         }
     }
     log[x].out += aux; 
-    //return aux;
 }
 
 string arruma(string x) {
@@ -244,6 +239,94 @@ void Reaching_Definitions(Bloco *bloco, int N, longevidade* log) {
 }
 /*************************************************************/
 
+string def_avaliable(Bloco bloco) {
+    string aux = "";
+    bool x = false;
+    for(int i = 0; i < bloco.codigo.size(); i++) {
+        for(int j = 0; j < bloco.codigo[i].size(); j++) {
+            if(bloco.codigo[i][j] == '=') {
+                x = true;
+            }
+            else if(x && bloco.codigo[i][j] != ' '){
+                aux += bloco.codigo[i][j];
+            }
+        }
+        x = false;
+        aux += ",";
+    }
+    return aux;
+}
+
+string kill_expre(Bloco bloco) {
+    string aux = "";
+    for(int i = 0; i < bloco.codigo.size(); i++) {
+        if(bloco.codigo[i].find('=') != std::string::npos) {
+            aux += bloco.codigo[i][0];
+        }
+    }
+    return aux;
+}
+
+void in_avaliable(Bloco* bloco, int N, int x, longevidade* log) {
+    string aux = "", aa = "";
+    bool findi = false;
+    string nova_aux = "";
+    string nova_aux_d = "";
+    int d = 0;
+
+    for(int i = 0; i < bloco[x].recebe.size(); i++) {
+        aa += log[bloco[x].recebe[i]-1].out;
+    }
+    log[x].in += aa;
+
+    nova_aux = log[x].def + log[x].in;
+
+    for(int i = log[x].use.size()-1; i >= 0; i--) {
+        d = 0;
+        if(nova_aux.find(log[x].use[i]) != std::string::npos) {
+            for(int j = 0; (j < nova_aux.size()  && d < i+1); j++) {
+                if(nova_aux[j] == ',' && i == 0) {
+                    d++;
+                    aux = nova_aux;
+                }
+                if(nova_aux[j] == ',' && !findi) {
+                    nova_aux_d += aux;
+                    nova_aux_d += ",";
+                }
+                else if(nova_aux[j] == ',' && findi) {
+                    aux = ",";
+                    findi = false;
+                }
+                else if(log[x].use[i] == nova_aux[j]) {
+                    findi = true;
+                }
+                else {
+                    aux += nova_aux[j];
+                }
+            }
+            nova_aux = nova_aux_d;
+            nova_aux_d = "";
+        }
+        else {
+            //nova_aux += log[x].def;
+        }
+    }
+    log[x].out += nova_aux; 
+}
+
+
+
+void Avaliabre_Expressions(Bloco *bloco, int N, longevidade* log) {
+    for(int i = 0; i < N; i++) {
+        log[i].def += def_avaliable(bloco[i]);
+        log[i].use += kill_expre(bloco[i]);
+    }
+    for(int i = 0; i < N; i++) {
+        in_avaliable(bloco, N, i, log);
+    }
+}
+
+
 int main() {
 
     int N,M;
@@ -256,6 +339,7 @@ int main() {
     Bloco bloco[N];
     longevidade* long_resposta = new longevidade[N];
     longevidade* long_definitions = new longevidade[N];
+    longevidade* long_avaliable_expre = new longevidade[N];
 
     for(int i = 0; i < N; i++) {
         cout << "digite M: ";
@@ -279,20 +363,30 @@ int main() {
         }
     }
 
-    //analise_longevidade(bloco, N, long_resposta);
+    analise_longevidade(bloco, N, long_resposta);
     Reaching_Definitions(bloco, N, long_definitions);
+    Avaliabre_Expressions(bloco, N, long_avaliable_expre);
     
-    /*for(int i = 0; i < N; i++) {
+    cout << "Analise de Longevidade!" << endl;
+    for(int i = 0; i < N; i++) {
         cout << "B" << bloco[i].index << ": in = {" << long_resposta[i].in << "}" << endl;
         cout << "B" << bloco[i].index << ": def = {" << long_resposta[i].def << "}" << endl;
         cout << "B" << bloco[i].index << ": use = {" << long_resposta[i].use << "}" << endl;
         cout << "B" << bloco[i].index << ": out = {" << long_resposta[i].out << "}" << endl;
-    }*/
+    }
+    cout << "Reaching Definitions!" << endl;
     for(int i = 0; i < N; i++) {
         cout << "B" << bloco[i].index << ": in = {" << long_definitions[i].in << "}" << endl;
         cout << "B" << bloco[i].index << ": gen = {" << long_definitions[i].def << "}" << endl;
         cout << "B" << bloco[i].index << ": kill = {" << long_definitions[i].use << "}" << endl;
         cout << "B" << bloco[i].index << ": out = {" << long_definitions[i].out << "}" << endl;
+    }
+    cout << "Avaliable Expressions!" << endl;
+    for(int i = 0; i < N; i++) {
+        cout << "B" << bloco[i].index << ": in = {" << long_avaliable_expre[i].in << "}" << endl;
+        cout << "B" << bloco[i].index << ": gen = {" << long_avaliable_expre[i].def << "}" << endl;
+        cout << "B" << bloco[i].index << ": kill = {" << long_avaliable_expre[i].use << "}" << endl;
+        cout << "B" << bloco[i].index << ": out = {" << long_avaliable_expre[i].out << "}" << endl;
     }
     /*for(int i = 0; i < N; i++) {
         for(int j = 0; j < bloco[i].aponta.size(); j++) {
