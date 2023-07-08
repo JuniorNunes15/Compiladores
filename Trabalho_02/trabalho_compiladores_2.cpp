@@ -239,6 +239,7 @@ void Reaching_Definitions(Bloco *bloco, int N, longevidade* log) {
 }
 /*************************************************************/
 
+/**************************Avaliable Expressions*******************/
 string def_avaliable(Bloco bloco) {
     string aux = "";
     bool x = false;
@@ -315,7 +316,6 @@ void in_avaliable(Bloco* bloco, int N, int x, longevidade* log) {
 }
 
 
-
 void Avaliabre_Expressions(Bloco *bloco, int N, longevidade* log) {
     for(int i = 0; i < N; i++) {
         log[i].def += def_avaliable(bloco[i]);
@@ -325,7 +325,7 @@ void Avaliabre_Expressions(Bloco *bloco, int N, longevidade* log) {
         in_avaliable(bloco, N, i, log);
     }
 }
-
+/*****************************************************************************/
 
 int main() {
 
@@ -367,7 +367,7 @@ int main() {
     Reaching_Definitions(bloco, N, long_definitions);
     Avaliabre_Expressions(bloco, N, long_avaliable_expre);
     
-    cout << "Analise de Longevidade!" << endl;
+    cout << endl << "Analise de Longevidade!" << endl;
     for(int i = 0; i < N; i++) {
         cout << "B" << bloco[i].index << ": in = {" << long_resposta[i].in << "}" << endl;
         cout << "B" << bloco[i].index << ": def = {" << long_resposta[i].def << "}" << endl;
